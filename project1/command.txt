@@ -1,0 +1,1 @@
+python3 mobilenet.py --ckpt_model model_20240313_151743.pt --ckpt_opt opt_20240313_151743.pt
