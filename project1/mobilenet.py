@@ -22,8 +22,8 @@ import os
 # TODO:
 # Decide your own hyper-parameters
 BATCH_SIZE = 10
-LEARNING_RATE = 0.00003
-NUM_EPOCH = 25
+LEARNING_RATE = 0.0001
+NUM_EPOCH = 10
 NUM_CLASSES = 7
 def train_one_batch(
         model: nn.Module, 
@@ -34,11 +34,12 @@ def train_one_batch(
         ) -> None:
     images = images.cuda()
     labels = labels.cuda()
-    # optimizer.zero_grad()
+    optimizer.zero_grad()
     outputs = model(images)
     loss = criterion(outputs, labels)
     loss.backward()
     optimizer.step()
+    
 def train(
         model: nn.Module,
         dataloader: DataLoader,
@@ -126,6 +127,7 @@ if __name__ == '__main__':
     parser.add_argument('--ckpt_model', type=str, default=None,     help="path of model pretrain weight")
     parser.add_argument('--ckpt_opt', type=str, default=None,     help="path of optimizer pretrain weight")
     parser.add_argument('--lr',    type=float,    default=LEARNING_RATE)
+    parser.add_argument('--mode',    type=str,    default="train")
     args = parser.parse_args()
     # To ensure the reproducibility, we will control the seed of random generators:
     random.seed(0)
@@ -153,6 +155,7 @@ if __name__ == '__main__':
         model.load_state_dict(torch.load(model_ckpt_path))
     else:
         model = mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT)
+        print(f'Use mobilenet_v2 pretrain weight')
         # Change the last layer to fit the number of classes
         model.classifier[1] = nn.Linear(model.classifier[1].in_features, NUM_CLASSES)
     model = model.cuda()
@@ -166,5 +169,8 @@ if __name__ == '__main__':
         print(f'Load optimizer from ckpt: {args.ckpt_opt}')
         opt_ckpt_path = os.path.join(ckpt_root, args.ckpt_opt) 
         optimizer.load_state_dict(torch.load(opt_ckpt_path))
-    Trainer(args, model, train_loader, val_loader, criterion, optimizer, result_root, ckpt_root)
-
+    print(f'########## Mode: {args.mode} ##########')
+    if(args.mode == 'train'):
+        Trainer(args, model, train_loader, val_loader, criterion, optimizer, result_root, ckpt_root)
+    else:
+        evaluate(model, test_loader, result_root)
